@@ -142,6 +142,12 @@ select{flex:1 1 200px;min-width:0;border:1px solid var(--line);border-radius:10p
       <p class="note" style="margin:0 0 8px">下のボタンを押すとFormsが開きます。内容は入っているので、確かめて「送信」を押してください。</p>
       <a class="btn" id="formsLink" href="#" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Formsを開いて提出する</a>
       <p class="err" id="formsWarn"></p>
+      <div class="note" id="formsHelp" style="margin:10px 0 0;line-height:1.7">
+        <b>「サインイン中に問題が発生しました」と出たとき</b><br>
+        ① そのタブを閉じる<br>
+        ② <a id="formsPlain" href="#" target="_blank" rel="noopener">ここを押してFormsを開く</a>（サインインのため。開いたら何も書かずに閉じてOK）<br>
+        ③ もう一度「Formsを開いて提出する」を押す
+      </div>
     </div>
     <div id="copyBox">
       <p class="q" id="copyTitle">提出用の文章</p>
@@ -3777,7 +3783,21 @@ function buildFormsUrl(e){
       found++;
     }
   });
-  return found ? url.toString() : null;
+  if (!found) return null;
+  let out = url.toString();
+  // URLが長すぎるとサインインでエラーになるので、ページのひとこと(Q8)を省く
+  if (out.length > 1800) {
+    [...p.keys()].forEach(k => {
+      const raw = (new URL(FORMS_URL).searchParams.get(k) || "").replace(/"/g, "").trim().toUpperCase();
+      if (raw === "Q8") p.delete(k);
+    });
+    out = url.toString();
+  }
+  return out;
+}
+function plainFormsUrl(){
+  try { const u = new URL(FORMS_URL); const id = u.searchParams.get("id");
+        return u.origin + u.pathname + "?id=" + encodeURIComponent(id); } catch (err) { return FORMS_URL; }
 }
 function setupForms(e){
   if (!FORMS_URL) { $("formsBox").classList.add("hidden"); return; }
@@ -3791,7 +3811,8 @@ function setupForms(e){
   $("formsBox").classList.remove("hidden");
   $("formsLink").classList.remove("hidden");
   $("formsLink").href = u;
-  $("formsWarn").textContent = u.length > 8000 ? "文章が長いので、Formsで一部が入らないことがあります。入っていなければ下の文章をコピーして貼り付けてください。" : "";
+  $("formsPlain").href = plainFormsUrl();
+  $("formsWarn").textContent = u.length > 1800 ? "文章が長いので、Formsで一部が入らないことがあります。入っていなければ下の文章をコピーして貼り付けてください。" : "";
   $("copyTitle").textContent = "うまく開けないとき";
   $("copyNote").textContent = "Formsが開かないときは、この文章をコピーして先生に伝えてください。";
 }
