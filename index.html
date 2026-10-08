@@ -3784,16 +3784,8 @@ function buildFormsUrl(e){
     }
   });
   if (!found) return null;
-  let out = url.toString();
-  // URLが長すぎるとサインインでエラーになるので、ページのひとこと(Q8)を省く
-  if (out.length > 1800) {
-    [...p.keys()].forEach(k => {
-      const raw = (new URL(FORMS_URL).searchParams.get(k) || "").replace(/"/g, "").trim().toUpperCase();
-      if (raw === "Q8") p.delete(k);
-    });
-    out = url.toString();
-  }
-  return out;
+  // URLSearchParamsは空白を「+」にするが、Formsは「+」を空白に戻さないので %20 にする
+  return url.toString().replace(/\+/g, "%20");
 }
 function plainFormsUrl(){
   try { const u = new URL(FORMS_URL); const id = u.searchParams.get("id");
